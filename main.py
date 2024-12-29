@@ -5,9 +5,9 @@ from threading import Thread
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env file
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")  # Read bot token from .env
+WALLET_ADDRESS = os.getenv("WALLET_ADDRESS")
 
 # Initialize Telegram Bot
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -99,7 +99,7 @@ def send_prices():
       op_price = fetch_price("OP/USD")
 
       OP_TOKEN_ADDRESS = op_web3.to_checksum_address("0x4200000000000000000000000000000000000042")
-      wallet_address = "0x6a98733077e55351303973131fA02aE79B44050c"
+      wallet_address = WALLET_ADDRESS
       eth_balance = get_balance(eth_web3, wallet_address)
       opeth_balance = get_balance(op_web3, wallet_address)
       op_token_balance = get_erc20_balance(op_web3, OP_TOKEN_ADDRESS, wallet_address)

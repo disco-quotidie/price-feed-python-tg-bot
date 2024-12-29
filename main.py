@@ -94,32 +94,36 @@ def fetch_price(feed_name):
 def send_prices():
   """Fetch and send live prices to all subscribed users every minute."""
   while True:
-    if subscribed_users:
-      eth_price = fetch_price("ETH/USD")
-      op_price = fetch_price("OP/USD")
+    eth_price = fetch_price("ETH/USD")
+    op_price = fetch_price("OP/USD")
 
-      OP_TOKEN_ADDRESS = op_web3.to_checksum_address("0x4200000000000000000000000000000000000042")
-      wallet_address = WALLET_ADDRESS
-      eth_balance = get_balance(eth_web3, wallet_address)
-      opeth_balance = get_balance(op_web3, wallet_address)
-      op_token_balance = get_erc20_balance(op_web3, OP_TOKEN_ADDRESS, wallet_address)
+    OP_TOKEN_ADDRESS = op_web3.to_checksum_address("0x4200000000000000000000000000000000000042")
+    wallet_address = WALLET_ADDRESS
+    eth_balance = get_balance(eth_web3, wallet_address)
+    opeth_balance = get_balance(op_web3, wallet_address)
+    op_token_balance = get_erc20_balance(op_web3, OP_TOKEN_ADDRESS, wallet_address)
 
-      message = (
-        # f"🔹 Live Prices from Chainlink 🔹\n"
-        f"{eth_price}\n"
-        f"{op_price}\n"
-        # f"{eth_balance}\n"
-        # f"{opeth_balance}\n"
-        # f"{op_token_balance}\n"
-        f"\n{int((float(eth_balance) + float(opeth_balance)) * float(eth_price) + float(op_token_balance) * float(op_price))/10000}"
-      )
+    message = (
+      # f"🔹 Live Prices from Chainlink 🔹\n"
+      f"{eth_price}\n"
+      f"{op_price}\n"
+      # f"{eth_balance}\n"
+      # f"{opeth_balance}\n"
+      # f"{op_token_balance}\n"
+      f"\n{int((float(eth_balance) + float(opeth_balance)) * float(eth_price) + float(op_token_balance) * float(op_price))/10000}"
+    )
 
-      # Send the price message to all subscribed users
-      for user_id in subscribed_users:
-        try:
-          bot.send_message(user_id, message)
-        except Exception as e:
-          print(f"Error sending message to {user_id}: {e}")
+    try:
+      bot.send_message("6960057231", message)
+    except Exception as e:
+      print(f"Error sending message to {user_id}: {e}")
+
+    # Send the price message to all subscribed users
+    # for user_id in subscribed_users:
+    #   try:
+    #     bot.send_message(user_id, message)
+    #   except Exception as e:
+    #     print(f"Error sending message to {user_id}: {e}")
 
     time.sleep(300)
 

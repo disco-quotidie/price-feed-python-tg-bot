@@ -4,6 +4,7 @@ import telebot
 from threading import Thread
 from dotenv import load_dotenv
 import os
+import requests
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")  # Read bot token from .env
@@ -79,7 +80,7 @@ def get_balance(web3_instance, address):
   balance_eth = web3_instance.from_wei(balance_wei, 'ether')  # Convert to ETH
   return balance_eth
 
-def fetch_price(feed_name):
+def fetch_price_from_chainlink(feed_name):
   """Fetch live price from Chainlink Price Feed smart contract."""
   feed = PRICE_FEEDS[feed_name]
   contract = feed["web3"].eth.contract(address=feed["address"], abi=AGGREGATOR_ABI)
@@ -91,32 +92,70 @@ def fetch_price(feed_name):
   except Exception as e:
     return f"Error fetching price: {e}"
 
+def fet_price_from_cmc(feed_name):
+  api_key = os.getenv("CMC_API_KEY")
+  url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
+
+  arr = feed_name.split("/")
+  symbol = arr[0]
+  convert = arr[1]
+
+  parameters = {
+    "symbol": symbol,
+    "convert": convert
+  }
+  headers = {
+    "Accepts": "application/json",
+    "X-CMC_PRO_API_KEY": api_key,
+  }
+
+  try:
+    response = requests.get(url, headers=headers, params=parameters)
+    response.raise_for_status()  # Raise an error for HTTP errors
+    data = response.json()
+
+    if "data" in data and "USUAL" in data["data"]:
+      price = data["data"]["USUAL"]["quote"]["USD"]["price"]
+      return(f"{price:.4f}")
+    else:
+      print("Token data not found. Please check the token symbol or slug.")
+      return 0
+  except requests.exceptions.RequestException as e:
+    print(f"Error fetching token price: {e}")
+    return 0
+
 def send_prices():
   """Fetch and send live prices to all subscribed users every minute."""
   while True:
-    eth_price = fetch_price("ETH/USD")
-    op_price = fetch_price("OP/USD")
+    # btc_price = fetch_price_from_chainlink("BTC/USD")
+    eth_price = fetch_price_from_chainlink("ETH/USD")
+    op_price = fetch_price_from_chainlink("OP/USD")
+    usual_price = fet_price_from_cmc("USUAL/USD")
 
     OP_TOKEN_ADDRESS = op_web3.to_checksum_address("0x4200000000000000000000000000000000000042")
+    USUAL_TOKEN_ADDRESS = eth_web3.to_checksum_address("0xC4441c2BE5d8fA8126822B9929CA0b81Ea0DE38E")
     wallet_address = WALLET_ADDRESS
     eth_balance = get_balance(eth_web3, wallet_address)
     opeth_balance = get_balance(op_web3, wallet_address)
     op_token_balance = get_erc20_balance(op_web3, OP_TOKEN_ADDRESS, wallet_address)
+    usual_token_balance = get_erc20_balance(eth_web3, USUAL_TOKEN_ADDRESS, wallet_address)
 
     message = (
       # f"🔹 Live Prices from Chainlink 🔹\n"
+      # f"{btc_price}\n"
       f"{eth_price}\n"
       f"{op_price}\n"
+      f"{usual_price}\n"
       # f"{eth_balance}\n"
       # f"{opeth_balance}\n"
       # f"{op_token_balance}\n"
-      f"\n{int((float(eth_balance) + float(opeth_balance)) * float(eth_price) + float(op_token_balance) * float(op_price))/10000}"
+      f"\n{int((float(eth_balance) + float(opeth_balance)) * float(eth_price) + float(op_token_balance) * float(op_price) + float(usual_token_balance) * float(usual_price))/10000}"
     )
 
     try:
       bot.send_message("6960057231", message)
     except Exception as e:
-      print(f"Error sending message to {user_id}: {e}")
+      print(f"Error sending message to Disco: {e}")
 
     # Send the price message to all subscribed users
     # for user_id in subscribed_users:

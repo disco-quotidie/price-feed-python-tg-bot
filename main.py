@@ -145,7 +145,6 @@ def send_prices():
       # f"{btc_price}\n"
       f"{eth_price}\n"
       f"{op_price}\n"
-      f"{usual_price}\n"
       # f"{eth_balance}\n"
       # f"{opeth_balance}\n"
       # f"{op_token_balance}\n"
